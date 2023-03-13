@@ -9,11 +9,15 @@ router.get("/expenses", function (req, res) {
   let startDate = req.query.d1;
   let endDate = req.query.d2;
   let query = getQueryBasedOnDates(startDate, endDate);
-  Expense.find(query)
-    .sort({ date: -1 })
-    .then((expensesSortedByDate) => {
-      res.send(expensesSortedByDate);
-    });
+  try {
+    Expense.find(query)
+      .sort({ date: -1 })
+      .then((expensesSortedByDate) => {
+        res.send(expensesSortedByDate);
+      });
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
 
 const getQueryBasedOnDates = function (startDate, endDate) {
@@ -47,25 +51,41 @@ router.post("/expense", function (req, res) {
     expenseDocument.save();
     res.send(`Amount is ${expense.amount} in ${expense.group}`);
   } catch (error) {
-    res.send(error);
+    res.staus(500).send(error);
   }
 });
 
 router.put("/update", function (req, res) {
   let groupBefore = req.query.group1;
   let groupAfter = req.query.group2;
-  Expense.findOneAndUpdate({ group: groupBefore }, { group: groupAfter }).then(
-    (expense) => {
+  try {
+    Expense.findOneAndUpdate(
+      { group: groupBefore },
+      { group: groupAfter }
+    ).then((expense) => {
       res.send(`${expense.item} has successfully changes to ${groupAfter}.`);
-    }
-  );
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
 
 router.get("/expenses/:group", function (req, res) {
   let wantedGroup = req.params.group;
   let total = req.query.total;
-  if (total == "true") {
-    Expense.aggregate([
+  try {
+    let query = getQueryBasedOnTotal(total, wantedGroup);
+    Expense.aggregate(query).then((result) => {
+      res.send(result);
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+const getQueryBasedOnTotal = function (total, wantedGroup) {
+  if (total == "true" || total == "True") {
+    let query = [
       { $match: { group: wantedGroup } },
       {
         $group: {
@@ -73,14 +93,10 @@ router.get("/expenses/:group", function (req, res) {
           totalAmount: { $sum: "$amount" },
         },
       },
-    ]).then((AmountInGroup) => {
-      res.send(AmountInGroup);
-    });
-  } else {
-    Expense.find({ group: wantedGroup }).then((expensesInSameGroup) => {
-      res.send(expensesInSameGroup);
-    });
+    ];
+    return query;
   }
-});
+  return [{ $match: { group: wantedGroup } }];
+};
 
 module.exports = router;
