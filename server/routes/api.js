@@ -8,26 +8,29 @@ const router = express.Router();
 router.get("/expenses", function (req, res) {
   let startDate = req.query.d1;
   let endDate = req.query.d2;
-  if (!startDate && !endDate) {
-    Expense.find({})
-      .sort({ date: -1 })
-      .then((expensesSortedByDate) => {
-        res.send(expensesSortedByDate);
-      });
-  } else if (startDate) {
+  let query = getQueryBasedOnDates(startDate, endDate);
+  Expense.find(query)
+    .sort({ date: -1 })
+    .then((expensesSortedByDate) => {
+      res.send(expensesSortedByDate);
+    });
+});
+
+const getQueryBasedOnDates = function (startDate, endDate) {
+  if (!startDate) {
+    return {};
+  } else {
     startDate = moment(startDate).format("YYYY-MM-DD");
     if (endDate) {
       endDate = moment(endDate).format("YYYY-MM-DD");
     } else {
       endDate = moment().format("YYYY-MM-DD");
     }
-    Expense.find({
+    return {
       $and: [{ date: { $gt: startDate } }, { date: { $lte: endDate } }],
-    }).then((expensesInRange) => {
-      res.send(expensesInRange);
-    });
+    };
   }
-});
+};
 
 router.post("/expense", function (req, res) {
   let date = req.body.date
