@@ -5,7 +5,7 @@ mongoose.connect("mongodb://localhost/expenseDB");
 const Expense = require("../model/Expense");
 const router = express.Router();
 
-router.get("/expenses", function (req, res) {
+router.get("/expense", function (req, res) {
   let startDate = req.query.d1;
   let endDate = req.query.d2;
   let query = getQueryBasedOnDates(startDate, endDate);
@@ -55,7 +55,7 @@ router.post("/expense", function (req, res) {
   }
 });
 
-router.put("/update", function (req, res) {
+router.put("/expense", function (req, res) {
   let groupBefore = req.query.group1;
   let groupAfter = req.query.group2;
   try {
@@ -70,7 +70,7 @@ router.put("/update", function (req, res) {
   }
 });
 
-router.get("/expenses/:group", function (req, res) {
+router.get("/expense/:group", function (req, res) {
   let wantedGroup = req.params.group;
   let total = req.query.total;
   try {
